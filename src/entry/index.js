@@ -3,6 +3,7 @@ import {gn, getUrlVars, isAndroid, isiOS} from '../utils/lib';
 import iOS from '../iPad/iOS';
 import UI from '../editor/ui/UI';
 import Localization from '../utils/Localization';
+import AppUsage from '../utils/AppUsage';
 
 export function indexMain () {
     gn('gettings').ontouchend = indexGettingstarted;
@@ -53,7 +54,6 @@ function indexFirstTime () {
         iOS.hidesplash(doit);
     }, 500);
     function doit () {
-        ScratchAudio.sndFX('tap.wav');
         window.ontouchend = function () {
             indexLoadOptions();
         };
@@ -64,6 +64,14 @@ function indexFirstTime () {
 }
 
 function indexLoadOptions () {
+    if (window.Settings.edition != 'PBS' && AppUsage.askForUsage()) {
+        indexLoadUsage();
+    } else {
+        indexLoadStart();
+    }
+}
+
+function indexLoadStart (afterUsage) {
     gn('authors').className = 'credits hide';
     gn('authorsText').className = 'creditsText hide';
 
@@ -76,6 +84,16 @@ function indexLoadOptions () {
         gn('blueguy').className = 'blue hide';
         gn('redguy').className = 'red hide';
         gn('gear').className = 'gear show';
+        
+        if (afterUsage) {
+            gn('catface').className = 'catface show';
+            gn('jrlogo').className = 'jrlogo show';
+            gn('usageQuestion').className = 'usageQuestion hide';
+            gn('usageSchool').className = 'usageSchool hide';
+            gn('usageHome').className = 'usageHome hide';
+            gn('usageOther').className = 'usageOther hide';
+            gn('usageNoanswer').className = 'usageNoanswer hide';
+        }
     }
     gn('gettings').className = 'gettings show';
     gn('startcode').className = 'startcode show';
@@ -87,14 +105,33 @@ function indexLoadOptions () {
     }
 }
 
+function indexLoadUsage () {
+    gn('authors').className = 'credits show';
+    gn('authorsText').className = 'creditsText hide';
+    gn('purpleguy').className = 'purple hide';
+    gn('blueguy').className = 'blue hide';
+    gn('redguy').className = 'red hide';
+    gn('catface').className = 'catface hide';
+    gn('jrlogo').className = 'jrlogo hide';
+    
+    gn('usageQuestion').textContent = Localization.localize('USAGE_QUESTION');
+    gn('useSchoolText').textContent = Localization.localize('USAGE_SCHOOL');
+    gn('useHomeText').textContent = Localization.localize('USAGE_HOME');
+    gn('useOtherText').textContent = Localization.localize('USAGE_OTHER');
+    gn('usageNoanswerText').textContent = Localization.localize('USAGE_NONE');
+    
+    gn('usageQuestion').className = 'usageQuestion show';
+    gn('usageSchool').className = 'usageSchool show';
+    gn('usageHome').className = 'usageHome show';
+    gn('usageOther').className = 'usageOther show';
+    gn('usageNoanswer').className = 'usageNoanswer show';
+    gn('usageSchool').ontouchend = indexSetUsage;
+    gn('usageHome').ontouchend = indexSetUsage;
+    gn('usageOther').ontouchend = indexSetUsage;
+    gn('usageNoanswer').ontouchend = indexSetUsage;
+}
+
 function indexGohome () {
-    // On iOS, sounds are loaded async, but the code as written expects to play tap.wav when we enter home.html
-    // (but since it isn't loaded yet, no sound is played).
-    // On Android, sync sounds means both calls to tap.wav result in a sound play.
-    // XXX: we should re-write the lobby loading to wait for the sounds to load, and not play a sound here.
-    if (isiOS) {
-        ScratchAudio.sndFX('tap.wav');
-    }
     iOS.setfile('homescroll.sjr', 0, function () {
         doNext();
     });
@@ -115,6 +152,29 @@ function indexGettingstarted () {
     window.location.href = 'gettingstarted.html?place=home';
 }
 
+function indexSetUsage (e) {
+    var usageText = '';
+
+    switch (e.target.parentElement.id) {
+    case 'usageSchool':
+        usageText = 'school';
+        break;
+    case 'usageHome':
+        usageText = 'home';
+        break;
+    case 'usageOther':
+        usageText = 'other';
+        break;
+    case 'usageNoanswer':
+        usageText = 'noanswer';
+        break;
+    }
+    // Send one-time analytics event about usage
+    iOS.analyticsEvent('lobby', 'scratchjr_usage', usageText);
+    AppUsage.setUsage(usageText);
+    ScratchAudio.sndFX('tap.wav');
+    indexLoadStart(true);
+}
 // For PBS KIDS edition only
 function indexInfo () {
     ScratchAudio.sndFX('tap.wav');

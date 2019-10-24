@@ -6,6 +6,7 @@ export const DEGTOR = Math.PI / 180;
 export const WINDOW_INNER_HEIGHT = window.innerHeight;
 export const WINDOW_INNER_WIDTH = window.innerWidth;
 export const scaleMultiplier = WINDOW_INNER_HEIGHT / 768.0;
+export const fullscreenScaleMultiplier = 136;
 
 export const isiOS = (typeof AndroidInterface == 'undefined');
 export const isAndroid = (typeof AndroidInterface != 'undefined');
@@ -66,7 +67,7 @@ export function preprocessAndLoadCss (baseUrl, url) {
     const head = document.head;
     let style = document.createElement('style');
     style.type = 'text/css';
-    if (style.styleSheet){
+    if (style.styleSheet) {
         style.styleSheet.cssText = cssData;
     } else {
         style.appendChild(document.createTextNode(cssData));
